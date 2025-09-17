@@ -1,3 +1,4 @@
+#Resource for Secrets
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,7 +9,7 @@ data:
   MYSQL_DATABASE: YmFua2FwcGRi
 
 ---
-
+#Resource for Configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -17,7 +18,7 @@ data:
   MYSQL_DATABASE: "bankappdb"
 
 ---
-
+#Resource for Storage
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata: 
@@ -30,7 +31,7 @@ reclaimPolicy: Retain
 volumeBindingMode: waitForFirstConsumer
 
 ---
-
+#Reosource for Persistent Volmune Claim
 apiVersion: v1 
 kind: PersistenceVolumeClaim
 metadata:
@@ -44,12 +45,12 @@ spec:
       storage: 5Gi
 
 ---
-
+#Resource for mySql Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql
-spec: 
+spec: #defines config deployment
   selector: #def information to be deployed 
     matchLabels:  
       app: mysql
@@ -59,7 +60,7 @@ spec:
     metadata:
       labels:
         app: mysql
-    spec:
+    spec: #defines config for the pod
       containers:
       - name: mysql
         image: mysql:8           
@@ -92,10 +93,15 @@ spec:
           claimName: mysql-pvc    
 
 ---
-
+#Reource for mysql Services
 apiVersion: v1
 kind: Service
 metadata:
   name: mysql-Service
 spec:
   ports:  
+  - port: 3306 #port exposed by the service
+    targetPort: 3306 #port open on the container
+  selector:
+    app: mysql  
+    
