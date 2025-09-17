@@ -97,7 +97,7 @@ spec: #defines config deployment
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-Service
+  name: mysql-Service # by default cluster IP service 
 spec:
   ports:  
   - port: 3306 #port exposed by the service
@@ -119,10 +119,10 @@ spec:
   template:  
     metadata:
       labels: bankapp
-spec:  
-  containers: 
-  - name: bankapp
-    image: castromeka/bankapp # image from my docker repo
+    spec:  
+      containers: 
+      - name: bankapp
+        image: castromeka/bankapp # image from my docker repo
     ports:
       - containerPort: 8080
     env:
@@ -140,3 +140,17 @@ spec:
         limits:
           memory: "1Gi"
           cpu: 1
+
+---
+# Resource for Bankapp service
+apiVersion: v1
+kind: service
+metadata:
+  name: bankapp-service
+spec:
+  type: LoadBalancer  
+  ports:   
+  - port: 80
+    targetPort: 8080    
+  selector: 
+    app: bankapp
