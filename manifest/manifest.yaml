@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: mysql-Secret
+  name: mysql-secret
 type: Opaque
 data:
   MYSQL_ROOT_PASSWORD: VGVzdDEyMw==
@@ -28,30 +28,30 @@ parameters:
   type: gp3
   fstype: ext4
 reclaimPolicy: Retain
-volumeBindingMode: waitForFirstConsumer
+volumeBindingMode: WaitForFirstConsumer
 
 ---
-#Reosource for Persistent Volmune Claim
+#Resource for Persistent Volume Claim
 apiVersion: v1 
-kind: PersistenceVolumeClaim
+kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
 spec:
   accessModes:
     - ReadWriteOnce
-  StorageClassName: ebs-sc
+  storageClassName: ebs-sc
   resources:
     requests:
       storage: 5Gi
 
 ---
-#Resource for mySql Deployment
+#Resource for MySQL Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql
-spec: #defines config deployment
-  selector: #def information to be deployed 
+spec:
+  selector:
     matchLabels:  
       app: mysql
   strategy:
@@ -60,7 +60,7 @@ spec: #defines config deployment
     metadata:
       labels:
         app: mysql
-    spec: #defines config for the pod
+    spec:
       containers:
       - name: mysql
         image: mysql:8           
@@ -68,40 +68,40 @@ spec: #defines config deployment
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-Secret
+              name: mysql-secret  # Fixed: lowercase
               key: MYSQL_ROOT_PASSWORD
         - name: MYSQL_DATABASE
           valueFrom:
-          configMapKeyRef:
-            name: mysql-config
-            key: MYSQL_DATABASE
+            configMapKeyRef:  # Fixed: proper indentation
+              name: mysql-config
+              key: MYSQL_DATABASE
         ports:
         - containerPort: 3306
         volumeMounts:
-        - mounthPath: /var/lib/mysql
+        - mountPath: /var/lib/mysql  # Fixed: mountPath not mounthPath
           name: mysql-data
         resources:
-          requests: #mininum request
+          requests:
             memory: "512Mi"
             cpu: "500m"
-          limits: #maxium request   
+          limits:
             memory: "1Gi"
             cpu: "1"
       volumes:
       - name: mysql-data
-        persistenceVolumeClaim:
+        persistentVolumeClaim:
           claimName: mysql-pvc    
 
 ---
-#Reource for mysql Services
+#Resource for mysql Service
 apiVersion: v1
-kind: Service
+kind: Service  # Fixed: Capital S in Service
 metadata:
-  name: mysql-Service # by default cluster IP service 
+  name: mysql-service  # Fixed: lowercase
 spec:
   ports:  
-  - port: 3306 #port exposed by the service
-    targetPort: 3306 #port open on the container
+  - port: 3306
+    targetPort: 3306
   selector:
     app: mysql  
 
@@ -118,33 +118,34 @@ spec:
       app: bankapp
   template:  
     metadata:
-      labels: bankapp
+      labels:
+        app: bankapp  # Fixed: proper key-value format
     spec:  
       containers: 
       - name: bankapp
-        image: castromeka/bankapp # image from my docker repo
-    ports:
-      - containerPort: 8080
-    env:
-    - name: SRING_DATASOURCE_URL
-      value: jdbc:mysql://mysql-Service:3306/bankappdb?useSSL=false&serverTimezone=UTC #here bankapp can connect to mysql via [mysql-service] 
-    - name: SPRING_DATASOURCE_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: mysql-Secret
-          key: MYSQL_ROOT_PASSWORD
-      resources:
-        requests:
-          memory: "500Mi"
-          cpu: "500m"
-        limits:
-          memory: "1Gi"
-          cpu: 1
+        image: castromeka/bankapp
+        ports:  # Fixed: indentation
+        - containerPort: 8080
+        env:  # Fixed: indentation
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://mysql-service:3306/bankappdb?useSSL=false&serverTimezone=UTC
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_ROOT_PASSWORD
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
 
 ---
 # Resource for Bankapp service
 apiVersion: v1
-kind: service
+kind: Service
 metadata:
   name: bankapp-service
 spec:
