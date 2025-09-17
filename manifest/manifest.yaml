@@ -68,7 +68,7 @@ spec: #defines config deployment
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-secret
+              name: mysql-Secret
               key: MYSQL_ROOT_PASSWORD
         - name: MYSQL_DATABASE
           valueFrom:
@@ -104,4 +104,39 @@ spec:
     targetPort: 3306 #port open on the container
   selector:
     app: mysql  
-    
+
+---
+#Resource for bankapp Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankapp
+spec:
+  replicas: 1  
+  selector:
+    matchLabels:
+      app: bankapp
+  template:  
+    metadata:
+      labels: bankapp
+spec:  
+  containers: 
+  - name: bankapp
+    image: castromeka/bankapp # image from my docker repo
+    ports:
+      - containerPort: 8080
+    env:
+    - name: SRING_DATASOURCE_URL
+      value: jdbc:mysql://mysql-Service:3306/bankappdb?useSSL=false&serverTimezone=UTC #here bankapp can connect to mysql via [mysql-service] 
+    - name: SPRING_DATASOURCE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mysql-Secret
+          key: MYSQL_ROOT_PASSWORD
+      resources:
+        requests:
+          memory: "500Mi"
+          cpu: "500m"
+        limits:
+          memory: "1Gi"
+          cpu: 1
