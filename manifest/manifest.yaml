@@ -1,38 +1,36 @@
-#Resource for Secrets
+---
+# Secrets for MySQL
 apiVersion: v1
 kind: Secret
 metadata:
   name: mysql-secret
 type: Opaque
 data:
-  MYSQL_ROOT_PASSWORD: VGVzdDEyMw==
+  MYSQL_ROOT_PASSWORD: VGVzdEAxMjM=
   MYSQL_DATABASE: YmFua2FwcGRi
-
 ---
-#Resource for Configuration
+# ConfigMap for MySQL
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql-config
 data:
   MYSQL_DATABASE: "bankappdb"
-
 ---
-#Resource for Storage
+# Storage Class for EBS
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
-metadata: 
+metadata:
   name: ebs-sc
 provisioner: ebs.csi.aws.com
 parameters:
   type: gp3
-  fstype: ext4
+  fsType: ext4
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
-
 ---
-#Resource for Persistent Volume Claim
-apiVersion: v1 
+# Persistent Volume Claim
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
@@ -43,16 +41,15 @@ spec:
   resources:
     requests:
       storage: 5Gi
-
 ---
-#Resource for MySQL Deployment
+# MySQL Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql
 spec:
   selector:
-    matchLabels:  
+    matchLabels:
       app: mysql
   strategy:
     type: Recreate
@@ -62,24 +59,8 @@ spec:
         app: mysql
     spec:
       containers:
-      - name: mysql
-        image: mysql:8           
-        env: 
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret  # Fixed: lowercase
-              key: MYSQL_ROOT_PASSWORD
-        - name: MYSQL_DATABASE
-          valueFrom:
-            configMapKeyRef:  # Fixed: proper indentation
-              name: mysql-config
-              key: MYSQL_DATABASE
-        ports:
-        - containerPort: 3306
-        volumeMounts:
-        - mountPath: /var/lib/mysql  # Fixed: mountPath not mounthPath
-          name: mysql-data
+      - image: mysql:8
+        name: mysql
         resources:
           requests:
             memory: "512Mi"
@@ -87,71 +68,87 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1"
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_DATABASE
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mysql-data
       volumes:
       - name: mysql-data
         persistentVolumeClaim:
-          claimName: mysql-pvc    
-
+          claimName: mysql-pvc
 ---
-#Resource for mysql Service
+# MySQL Service
 apiVersion: v1
-kind: Service  # Fixed: Capital S in Service
+kind: Service
 metadata:
-  name: mysql-service  # Fixed: lowercase
+  name: mysql-service
 spec:
-  ports:  
+  ports:
   - port: 3306
     targetPort: 3306
   selector:
-    app: mysql  
-
+    app: mysql
 ---
-#Resource for bankapp Deployment
+# BankApp Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bankapp
 spec:
-  replicas: 1  
+  replicas: 1
   selector:
     matchLabels:
       app: bankapp
-  template:  
+  template:
     metadata:
       labels:
-        app: bankapp  # Fixed: proper key-value format
-    spec:  
-      containers: 
+        app: bankapp
+    spec:
+      containers:
       - name: bankapp
-        image: castromeka/bankapp
-        ports:  # Fixed: indentation
+        image: adijaiswal/bankapp:latest
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
         - containerPort: 8080
-        env:  # Fixed: indentation
+        env:
         - name: SPRING_DATASOURCE_URL
-          value: jdbc:mysql://mysql-service:3306/bankappdb?useSSL=false&serverTimezone=UTC
+          value: jdbc:mysql://mysql-service:3306/bankappdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+        - name: SPRING_DATASOURCE_USERNAME
+          value: root
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: mysql-secret
               key: MYSQL_ROOT_PASSWORD
-        resources:
-          requests:
-            memory: "500Mi"
-            cpu: "500m"
-          limits:
-            memory: "1Gi"
-            cpu: "1"
-
 ---
-# Resource for Bankapp service
+# BankApp Service
 apiVersion: v1
 kind: Service
 metadata:
   name: bankapp-service
 spec:
-  type: LoadBalancer  
-  ports:   
+  type: LoadBalancer
+  ports:
   - port: 80
-    targetPort: 8080    
-  selector: 
+    targetPort: 8080
+  selector:
     app: bankapp
