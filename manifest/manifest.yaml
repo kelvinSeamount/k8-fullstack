@@ -36,7 +36,7 @@ metadata:
   name: mysql-pvc
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce #Only one pod can read/write at a time
   storageClassName: ebs-sc
   resources:
     requests:
@@ -92,7 +92,7 @@ spec:
 ---
 # MySQL Service
 apiVersion: v1
-kind: Service
+kind: Service #ClusterIP Creates internal networking
 metadata:
   name: mysql-service
 spec:
