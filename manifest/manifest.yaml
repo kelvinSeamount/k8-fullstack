@@ -6,7 +6,7 @@ metadata:
   name: mysql-secret
 type: Opaque
 data:
-  MYSQL_ROOT_PASSWORD: VGVzdEAxMjM=
+  MYSQL_ROOT_PASSWORD: VGVzdDEyMw==
   MYSQL_DATABASE: YmFua2FwcGRi
 ---
 # ConfigMap for MySQL
